@@ -267,13 +267,110 @@ class StudentExerciseReports():
             for exercise in exercises:
                 print(f'\t* {exercise}')
 
+    def instructor_exercises(self):
+            exercises = dict()
+
+            with sqlite3.connect(self.db_path) as conn:
+                db_cursor = conn.cursor()
+
+                db_cursor.execute("""
+                        select
+                            i.Id InstructorId,
+                            i.FirstName,
+                            i.LastName,
+                            e.Id,
+                            e.ExerciseName
+                        from Instructor i
+                        join InstructorExercise ie on ie.InstructorId = i.Id
+                        join Exercise e on e.Id = ie.ExerciseId
+                        """)
+
+                dataset = db_cursor.fetchall()
+
+            for row in dataset:
+                instructor_id = row[0]
+                instructor_name = f'{row[1]} {row[2]}'
+                instructor_exercise_id = row[3]
+                exercise_name = row[4]
+
+                if instructor_name not in exercises:
+                    exercises[instructor_name] = [exercise_name]
+                else:
+                    exercises[instructor_name].append(exercise_name)
+            print(exercises)
+
+            for instructor_name, exercises in exercises.items():
+                print(f'{instructor_name} has assigned:')
+                for exercise in exercises:
+                    print(f'\t* {exercise}')
+
+    def assigned_student_exercises(self):
+
+        assigned_exercises = dict()
+
+
+        with sqlite3.connect(self.db_path) as conn:
+            db_cursor = conn.cursor()
+
+            db_cursor.execute("""
+                select
+                    e.Id ExerciseId,
+                    e.ExerciseName,
+                    i.Id InstructorId,
+                    i.FirstName,
+                    i.LastName,
+                    s.Id StudentId,
+                    s.FirstName,
+                    s.LastName
+                from Exercise e
+                join InstructorExercise ie on e.Id = ie.ExerciseId
+                join Student s on s.Id = ie.StudentId
+                join Instructor i on i.id = ie.InstructorId
+            """)
+
+            dataset = db_cursor.fetchall()
+        # Then start iterating over the rows in the data set, and assign all rows to a variable.
+
+        for row in dataset:
+            exercise_id = row[0]
+            exercise_name = row[1]
+            instructor_id = row[2]
+            instructor_name = f'{row[3]} {row[4]}'
+            student_id = row[5]
+            student_name = f'{row[6]} {row[7]}'
+
+        # Then you start using the dictionary. For each row, you are going to determine if the dictionary has the
+        # current exercise's name as a key. If it doesn't have the key yet, you will create it and put the student's
+        # name in a list. If it already has the key, you will append to the list of students.
+
+            if exercise_name not in assigned_exercises:
+                assigned_exercises[exercise_name] = [instructor_name]
+            else:
+                assigned_exercises[exercise_name].append(instructor_name)
+
+            if exercise_name not in assigned_exercises:
+                assigned_exercises[exercise_name] = [student_name]
+            else:
+                assigned_exercises[exercise_name].append(student_name)
+        print(assigned_exercises)
+
+        # Once the dictionary is built, then you can iterate all of the items in it.
+        # When you access the items() in a dictionary, you have to define a variable to hold the key, and
+        # one to hold the value in the for loop.
+        for exercise_name, instructors in assigned_exercises.items():
+            print(f'{exercise_name}:')
+            for instructor in instructors:
+                print(f'\t* {instructor} assigned this to {student_name}')
+
 reports = StudentExerciseReports()
 # reports.all_students()
 # reports.all_cohorts()
 # reports.all_exercises()
 # reports.all_instructors()
-reports.student_exercises()
-reports.student_workload()
+# reports.student_exercises()
+# reports.student_workload()
+# reports.instructor_exercises()
+reports.assigned_student_exercises()
 
 # Now you have a Student class that you can use to generate a new object, with contextual properties,
 # for interacting with student data. You would create a new instance like so.
